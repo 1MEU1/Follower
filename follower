@@ -1,0 +1,152 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class follower : MonoBehaviour
+{
+    public Transform way;
+    public float speed = 5f;
+    public float turnspeed = 100f;
+    public float gorusmesafesi = 12f;
+    public LayerMask layer;
+    public Light light1;
+
+    private int t = 1;
+    private Animator anime;    
+    private Color color;
+    private float lightangle;
+    public GameObject player;
+    public GameObject canvas;
+    private  AudioSource audio;
+    private player dissplayer;
+    private AudioSource ses;
+
+    void Start()
+    {
+        audio = GetComponent<AudioSource>();
+        anime = GetComponent<Animator>();  
+        color = light1.color;
+        lightangle = light1.spotAngle;
+        dissplayer = GameObject.FindGameObjectWithTag("Player").GetComponent<player>();
+        ses = GameObject.FindGameObjectWithTag("Player").GetComponent<AudioSource>();
+
+
+        Vector3[] duraklar = new Vector3[way.childCount];
+
+        for (int i = 0; i < duraklar.Length; i++)
+        {
+            duraklar[i] = way.GetChild(i).position;
+        }
+
+        StartCoroutine(wayfollow(duraklar));
+    }
+
+    
+
+    private void Update()
+    {
+         if(karakteryakalandımı())
+        {
+            Siren();
+            ses.enabled = false;
+            dissplayer.enabled = false;
+            light1.color = Color.yellow;         
+            canvas.SetActive(true);
+
+        }
+        else
+        {
+            light1.color = color;
+        } 
+    }
+    private void Siren()
+    {
+        audio.Play();
+    }
+
+
+
+    bool karakteryakalandımı()
+    {
+        RaycastHit hit;
+        bool detect = false;
+
+        if(Vector3.Distance(transform.position, player.transform.position) < gorusmesafesi)
+        {
+            Vector3 distance = (player.transform.position - transform.position).normalized;
+            float angle = Vector3.Angle(transform.forward, distance);
+            if (angle < lightangle /2)
+            {
+                if(Physics.Raycast(transform.position,player.transform.position,out hit,100,layer))
+                {
+                    detect = false;
+                }
+                else
+                {
+                    detect = true;
+                }
+            }
+        }
+
+        return detect;
+    }
+
+
+
+    
+    IEnumerator KarakterDonus(Vector3 hedef)
+    {
+        anime.SetBool("yurume", false);
+        Vector3 direction = (hedef - transform.position).normalized;
+        float angle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+
+        while (Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y,angle)) > 0.2f)
+        {
+            float newAngle = Mathf.MoveTowardsAngle(transform.eulerAngles.y, angle, turnspeed * Time.deltaTime);
+            transform.eulerAngles = Vector3.up * newAngle;
+
+            yield return null;
+        
+        }
+        anime.SetBool("yurume", true);
+    }
+    IEnumerator wayfollow(Vector3[] duraklar)
+    {
+        anime.SetBool("yurume", true);
+        transform.position = duraklar[0];
+        Vector3 hedef = duraklar[t];
+        transform.LookAt(hedef);
+        
+        while (true)
+        {
+            for (int i = 0; i < duraklar.Length; i++)
+            {
+                Vector3 moveAmount = (hedef - transform.position).normalized * speed * Time.deltaTime;
+                transform.Translate(moveAmount, Space.World);
+
+                if (Vector3.Distance(hedef, transform.position) <= 0.2f)
+                {
+                    t++;
+
+                    if (t == duraklar.Length)
+                    {
+                        t = 0;
+                    }
+
+                    hedef = duraklar[t];
+
+                    yield return new WaitForSeconds(0.5f);
+                    yield return StartCoroutine(KarakterDonus(hedef));
+
+                }
+
+                yield return null;
+            }
+        }
+
+    }
+
+
+
+
+}
