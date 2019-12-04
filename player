@@ -1,0 +1,82 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody))]//yazılan objeckt için rigidbody tipinde komapanent oluşturmak.
+public class player : MonoBehaviour
+{
+    [Header("player özellikleri")]
+    [Range (0,20)]public float speed = 5f;
+    [Range(0,20)] public float turnspeed = 20f;
+
+
+    public AudioClip motorbeklem, motorhareket;
+    public  float smoothTime = 0.2f;
+    private float smoothAngle;
+    private float smoothMove;
+    private float vel;
+    private Rigidbody rigid;
+    private Vector3 MoveAmount;
+    private AudioSource motorsesi;
+    private float input;
+
+    void Start()
+    {
+        motorsesi = GetComponent<AudioSource>();
+        rigid = GetComponent<Rigidbody>();
+    }
+
+
+    void Update()
+    {
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
+
+        Vector3 playerInput = new Vector3(h, 0f, v);
+        Vector3 direction = playerInput.normalized;
+        input = direction.magnitude;
+
+        smoothMove = Mathf.SmoothDamp(smoothMove, input, ref vel, smoothTime);
+        float angle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;//Rad2Deg radyandan dereceye dönüştürmek için kullanıldı
+        smoothAngle = Mathf.LerpAngle(smoothAngle, angle, turnspeed * Time.deltaTime * input);
+        
+        
+        Vector3 Velocity = direction * speed;
+        MoveAmount = Velocity * Time.deltaTime * smoothMove;
+
+        motor(input);
+     
+    }
+
+    private void motor(float input)
+    {
+
+        if (input<1)
+        {
+            if (motorsesi.clip == motorhareket)
+            {
+                motorsesi.clip = motorbeklem;
+                motorsesi.Play();
+            }
+
+        }
+
+        else
+        {
+            if ((motorsesi.clip == motorbeklem))
+            {
+               motorsesi.clip = motorhareket;
+               motorsesi.Play();
+            }
+        }
+        
+    }
+
+    private void FixedUpdate()
+    {
+        rigid.MovePosition(rigid.position + MoveAmount);
+        rigid.MoveRotation(Quaternion.Euler(Vector3.up * smoothAngle));//up y ekseni yani(0,1,0)
+    }
+}
+
+
