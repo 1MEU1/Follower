@@ -1,0 +1,21 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class way : MonoBehaviour
+{
+    public Transform way1;
+
+    private void OnDrawGizmos()
+    {
+        Transform startPos = way1.GetChild(0);
+
+        foreach (Transform durak in way1)
+        {
+            Gizmos.DrawLine(startPos.position, durak.position);
+            startPos = durak;
+        }
+        Gizmos.DrawLine(startPos.position, way1.GetChild(0).position);
+    }
+}
+
